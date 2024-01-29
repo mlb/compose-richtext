@@ -59,7 +59,7 @@ public fun RichTextScope.Markdown(
   // see https://issuetracker.google.com/issues/172366483
   val realLinkClickedHandler = onLinkClickedState.value ?: LocalUriHandler.current.let {
     remember {
-      { url -> it.openUri(url) }
+      { url -> try { it.openUri(url)} catch(e: Exception) { e.printStackTrace() } }
     }
   }
   CompositionLocalProvider(LocalOnLinkClicked provides realLinkClickedHandler) {
