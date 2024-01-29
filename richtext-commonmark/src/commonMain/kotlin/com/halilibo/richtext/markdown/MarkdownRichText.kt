@@ -104,12 +104,21 @@ private fun computeRichTextString(
                 IntSize(128.dp.roundToPx(), 128.dp.roundToPx())
               }
             ) {
-              RemoteImage(
-                url = currentNodeType.destination,
-                contentDescription = currentNodeType.title,
-                modifier = Modifier.fillMaxWidth(),
-                contentScale = ContentScale.Inside
-              )
+              if(currentNodeType.destination.startsWith("data:")) {
+                EmbeddedImage(
+                  url = currentNodeType.destination,
+                  contentDescription = currentNodeType.title,
+                  modifier = Modifier.fillMaxWidth(),
+                  contentScale = ContentScale.Inside
+                )
+              } else {
+                RemoteImage(
+                  url = currentNodeType.destination,
+                  contentDescription = currentNodeType.title,
+                  modifier = Modifier.fillMaxWidth(),
+                  contentScale = ContentScale.Inside
+                )
+              }
             }
           )
           null
