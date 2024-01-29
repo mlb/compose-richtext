@@ -36,6 +36,8 @@ internal fun SimpleTableLayout(
   cellSpacing: Float,
   modifier: Modifier
 ) {
+  if(columns < 1) return
+
   SubcomposeLayout(modifier = modifier) { constraints ->
     val measurables = subcompose(false) {
       rows.forEach { row ->
