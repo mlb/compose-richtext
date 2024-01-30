@@ -52,6 +52,7 @@ import com.halilibo.richtext.ui.string.richTextString
 public fun RichTextScope.Markdown(
   content: String,
   markdownParseOptions: MarkdownParseOptions = MarkdownParseOptions.Default,
+  codeStyler : @Composable ((info: String, content: String) -> Unit)? = null,
   onLinkClicked: ((String) -> Unit)? = null
 ) {
   val onLinkClickedState = rememberUpdatedState(onLinkClicked)
@@ -64,7 +65,7 @@ public fun RichTextScope.Markdown(
   }
   CompositionLocalProvider(LocalOnLinkClicked provides realLinkClickedHandler) {
     val markdownAst = parsedMarkdownAst(text = content, options = markdownParseOptions)
-    RecursiveRenderMarkdownAst(astNode = markdownAst)
+    RecursiveRenderMarkdownAst(astNode = markdownAst, codeStyler)
   }
 }
 
@@ -105,14 +106,14 @@ internal expect fun parsedMarkdownAst(text: String, options: MarkdownParseOption
  */
 @Suppress("IMPLICIT_CAST_TO_ANY")
 @Composable
-internal fun RichTextScope.RecursiveRenderMarkdownAst(astNode: AstNode?) {
+internal fun RichTextScope.RecursiveRenderMarkdownAst(astNode: AstNode?, codeStyler: @Composable ((info: String, content: String) -> Unit)? = null) {
   astNode ?: return
 
   when (val astNodeType = astNode.type) {
-    is AstDocument -> visitChildren(node = astNode)
+    is AstDocument -> visitChildren(node = astNode, codeStyler)
     is AstBlockQuote -> {
       BlockQuote {
-        visitChildren(astNode)
+        visitChildren(astNode, codeStyler)
       }
     }
     is AstBulletList -> {
@@ -120,7 +121,7 @@ internal fun RichTextScope.RecursiveRenderMarkdownAst(astNode: AstNode?) {
         listType = Unordered,
         items = astNode.filterChildrenType<AstListItem>().toList()
       ) {
-        visitChildren(it)
+        visitChildren(it, codeStyler)
       }
     }
     is AstOrderedList -> {
@@ -128,7 +129,7 @@ internal fun RichTextScope.RecursiveRenderMarkdownAst(astNode: AstNode?) {
         listType = Ordered,
         items = astNode.childrenSequence().toList()
       ) { astListItem ->
-        visitChildren(astListItem)
+        visitChildren(astListItem, codeStyler)
       }
     }
     is AstThematicBreak -> {
@@ -136,14 +137,14 @@ internal fun RichTextScope.RecursiveRenderMarkdownAst(astNode: AstNode?) {
     }
     is AstHeading -> {
       Heading(level = astNodeType.level) {
-        MarkdownRichText(astNode, Modifier.semantics { heading() } )
+        MarkdownRichText(astNode, modifier = Modifier.semantics { heading() } )
       }
     }
     is AstIndentedCodeBlock -> {
-      CodeBlock(text = astNodeType.literal.trim())
+      CodeBlock(text = astNodeType.literal.trim(), codeStyler = codeStyler)
     }
     is AstFencedCodeBlock -> {
-      CodeBlock(text = astNodeType.literal.trim())
+      CodeBlock(text = astNodeType.literal.trim(), info = astNodeType.info, codeStyler = codeStyler)
     }
     is AstHtmlBlock -> {
       Text(text = richTextString {
@@ -157,7 +158,7 @@ internal fun RichTextScope.RecursiveRenderMarkdownAst(astNode: AstNode?) {
       /* no-op */
     }
     is AstParagraph -> {
-      MarkdownRichText(astNode)
+      MarkdownRichText(astNode, codeStyler)
     }
     is AstTableRoot -> {
       RenderTable(astNode)
@@ -193,9 +194,9 @@ internal fun RichTextScope.RecursiveRenderMarkdownAst(astNode: AstNode?) {
  * @param node Root ASTNode whose children will be visited.
  */
 @Composable
-internal fun RichTextScope.visitChildren(node: AstNode?) {
+internal fun RichTextScope.visitChildren(node: AstNode?, codeStyler: @Composable ((info: String, content: String) -> Unit)?) {
   node?.childrenSequence()?.forEach {
-    RecursiveRenderMarkdownAst(astNode = it)
+    RecursiveRenderMarkdownAst(astNode = it, codeStyler)
   }
 }
 

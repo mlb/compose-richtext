@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.halilibo.richtext.markdown.node.AstBlockQuote
@@ -56,11 +57,11 @@ import com.halilibo.richtext.ui.string.withFormat
  * @param astNode Root node to accept as Text Content container.
  */
 @Composable
-internal fun RichTextScope.MarkdownRichText(astNode: AstNode, modifier: Modifier = Modifier) {
+internal fun RichTextScope.MarkdownRichText(astNode: AstNode, codeStyler: @Composable ((info: String, content: String) -> Unit)? = null, modifier: Modifier = Modifier) {
   val onLinkClicked = LocalOnLinkClicked.current
   // Assume that only RichText nodes reside below this level.
   val richText = remember(astNode, onLinkClicked) {
-    computeRichTextString(astNode, onLinkClicked)
+    computeRichTextString(astNode, onLinkClicked, codeStyler)
   }
 
   Text(text = richText, modifier = modifier)
@@ -68,7 +69,8 @@ internal fun RichTextScope.MarkdownRichText(astNode: AstNode, modifier: Modifier
 
 private fun computeRichTextString(
   astNode: AstNode,
-  onLinkClicked: (String) -> Unit
+  onLinkClicked: (String) -> Unit,
+  codeStyler: @Composable ((info: String, content: String) -> Unit)?
 ): RichTextString {
   val richTextStringBuilder = RichTextString.Builder()
 
@@ -88,8 +90,19 @@ private fun computeRichTextString(
     if (!isVisited) {
       val newFormatIndex = when (val currentNodeType = currentNode.type) {
         is AstCode -> {
-          richTextStringBuilder.withFormat(RichTextString.Format.Code) {
-            append(currentNodeType.literal)
+          if(codeStyler == null) {
+            richTextStringBuilder.withFormat(RichTextString.Format.Code) {
+              append(currentNodeType.literal)
+            }
+          } else {
+            richTextStringBuilder.withFormat(RichTextString.Format.Code) {
+              appendInlineContentWithoutStyleReset(
+                currentNodeType.literal, content =
+                InlineContent(placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter) {
+                  codeStyler("", currentNodeType.literal)
+                }
+              )
+            }
           }
           null
         }
