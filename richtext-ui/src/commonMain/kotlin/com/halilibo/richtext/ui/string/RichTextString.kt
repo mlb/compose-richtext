@@ -290,6 +290,15 @@ public data class RichTextString internal constructor(
       formatObjects.putAll(text.formatObjects)
     }
 
+    public fun appendInlineContentWithoutStyleReset(
+      alternateText: String = REPLACEMENT_CHAR,
+      content: InlineContent
+    ) {
+      val tag = randomUUID()
+      formatObjects["inline:$tag"] = content
+      builder.appendInlineContent(tag, alternateText)
+    }
+
     public fun appendInlineContent(
       alternateText: String = REPLACEMENT_CHAR,
       content: InlineContent

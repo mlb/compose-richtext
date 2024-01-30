@@ -57,10 +57,16 @@ internal fun CodeBlockStyle.resolveDefaults() = CodeBlockStyle(
  */
 @Composable public fun RichTextScope.CodeBlock(
   text: String,
+  info: String = "",
+  codeStyler: @Composable ((info: String, content: String) -> Unit)? = null,
   wordWrap: Boolean? = null
 ) {
   CodeBlock(wordWrap = wordWrap) {
-    Text(text)
+    if (codeStyler == null) {
+      Text(text)
+    } else {
+      codeStyler(info, text)
+    }
   }
 }
 
